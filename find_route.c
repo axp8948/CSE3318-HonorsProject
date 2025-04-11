@@ -215,16 +215,6 @@ int main(int argc, char** argv)
 
     inputFile = fopen(fileName, "r");
 
-
-    // DEBUG CODE:
-    // char fileLine [100];
-
-    // while(fgets(fileLine, sizeof(fileLine), inputFile))
-    // {
-    //     printf("%s", fileLine);
-    //     printf("\n");
-    // }
-
     // Error message if the file could not be opened!
 
     if (inputFile == NULL)
@@ -243,6 +233,26 @@ int main(int argc, char** argv)
         scanf("%s", destination);
     
         printf("\n");
+    }
+
+    if (mode == 1)
+    {
+        printf("file: \n");
+        char fileLine [MAXINPUT * 2];
+
+        while(fgets(fileLine, sizeof(fileLine), inputFile))
+        {
+            printf("%s", fileLine);
+
+            if (strcmp(fileLine, "END OF INPUT") == 0)
+            {
+                break;
+            }
+        }
+
+        printf("\n\n");
+
+        rewind(inputFile); // set the file pointer to beginning to another read
     }
 
 
@@ -282,8 +292,10 @@ int main(int argc, char** argv)
 
     if (mode == 1)
     {
+        printf("the correspondence will be \n");
         debugMode(cities, cityCount);
-            // CLEANUPS
+        
+        // CLEANUPS
         fclose(inputFile); // Close the file after the end of operation
         free(cities); // free the allocated memory to avoid memory leaks
     }
