@@ -24,28 +24,22 @@ typedef struct NeighborNode
 // Define the city node
 typedef struct City
 {
-    char name[100]; // name of city
+    char name[MAXINPUT]; // name of city
     NeighborNode *NeighborHead; // neighbors 
 } City;
 
 // HELPER FUNCTIONS
 
-
-// Function to print the graph
-void printGraph(City* cities, int cityCount) {
-    for (int i = 0; i < cityCount; i++) {
-        printf("City: %s\n", cities[i].name);
-        NeighborNode* current = cities[i].NeighborHead;
-        while (current != NULL) {
-            printf("  -> %s (Distance: %d)\n", cities[current->cityIndex].name, current->distance);
-            current = current->nextCity;
-        }
-        printf("\n");
+// Function to print in debug mode
+void debugMode(City * cities, int cityCount)
+{
+    for(int i = 0; i < cityCount; i++)
+    {
+        printf("%d - %s \n", i, cities[i].name);
     }
 }
 
-// Function to find the index of city (if it exists)
-
+// Function to find the index of city (if it exists) otherwise add a new city
 int findCityIndex(City** cities, int *cityCount, int *cityCapacity, char city [])
 {
     for (int i = 0; i < *cityCount; i++)
@@ -56,6 +50,7 @@ int findCityIndex(City** cities, int *cityCount, int *cityCapacity, char city []
         }
     }
 
+    // realloacate memory of if the cities array is full
     if (*cityCount == *cityCapacity)
     {
         *cityCapacity = (*cityCapacity) * 2; // Less Amortized cost
@@ -64,7 +59,6 @@ int findCityIndex(City** cities, int *cityCount, int *cityCapacity, char city []
 
 
     // If city is not already in the list, add it
-    
     strcpy((*cities)[*cityCount].name, city);  
     (*cities)[*cityCount].NeighborHead = NULL; 
     (*cityCount)++; 
@@ -72,7 +66,6 @@ int findCityIndex(City** cities, int *cityCount, int *cityCapacity, char city []
 }
 
 // Function to build Graph
-
 void buildGraph(City * cities, int sourceCityIndex, int destinationCityIndex, int distance)
 {
     NeighborNode *newNode = malloc(sizeof(NeighborNode));
@@ -80,7 +73,6 @@ void buildGraph(City * cities, int sourceCityIndex, int destinationCityIndex, in
     newNode -> distance = distance;
     newNode -> nextCity = cities[sourceCityIndex].NeighborHead; // Adding on the first of the list, need not to traverse the list // less time
     cities[sourceCityIndex].NeighborHead = newNode; // make the neighborhead point to the new neighbor city
-
 }
 
 void dijkstraAlgorithm(City *cities, int sourceCityIndex, int destinationCityIndex, int cityCount)
@@ -151,8 +143,50 @@ void dijkstraAlgorithm(City *cities, int sourceCityIndex, int destinationCityInd
     }
     else
     {
-        printf("distance: %d \n", distance[destinationCityIndex]); // Destination city's weight is the shortest distance
+        printf("distance: %dkm \n", distance[destinationCityIndex]); // Destination city's weight is the shortest distance
         printf("route: \n");
+
+        // Trace back the path to print the route
+        int path[cityCount];
+        int pathLength = 0;
+
+        int currentCity = destinationCityIndex;
+        while(currentCity != sourceCityIndex)
+        {
+            path[pathLength] = currentCity;
+            pathLength++;
+            currentCity = pathTracker[currentCity]; // Retrieve the index of current city from pathTracker
+        }
+
+        path[pathLength] = sourceCityIndex;
+        pathLength++;
+
+        // Since the cities are stored from destination to source // print in reverse order
+        for (int i = pathLength - 1; i > 0; i--)
+        {
+            int currentCityIndex = path[i];
+            int nextCityIndex = path[i-1];
+
+            int distanceBetween = 0;
+
+            // Go through all the neighbors 
+            NeighborNode* neighbor = cities[currentCityIndex].NeighborHead;
+
+            while(neighbor != NULL)
+            {
+                if (neighbor -> cityIndex == nextCityIndex) // nextCityIndex is the index of city in pathTracker
+                {
+                    distanceBetween = neighbor -> distance;
+                    break;
+                }
+
+                neighbor = neighbor -> nextCity; // update the neighbor
+            }
+
+            printf("%s to %s, %dkm\n", cities[currentCityIndex].name, cities[nextCityIndex].name, distanceBetween);
+        }
+
+
     }
 }
 
@@ -160,28 +194,25 @@ void dijkstraAlgorithm(City *cities, int sourceCityIndex, int destinationCityInd
 
 int main(int argc, char** argv)
 {
+    // Exit the program for invalid arguments
+    if (argc != 2)
+    {
+        printf("Invalid Arguments! \n");
+        exit(-1);
+    }
+
+    int mode; // Mode 0 = Normal, Mode 1 = Debug
+    mode = atoi(argv[1]);
+
     // Get the filename and open it in read mode
     FILE *inputFile;
-    char fileName[100];
-    char source[100];
-    char destination[100];
+    char fileName[MAXINPUT];
+    char source[MAXINPUT];
+    char destination[MAXINPUT];
 
     printf("Enter filename: ");
     scanf("%s", fileName);
 
-    printf("\n");
-
-    printf("Enter origin city: ");
-    scanf("%s", source);
-
-    printf("\n");
-
-    printf("Enter destination city: ");
-    scanf("%s", destination);
-
-    printf("\n\n");
-
-    
     inputFile = fopen(fileName, "r");
 
 
@@ -198,13 +229,24 @@ int main(int argc, char** argv)
 
     if (inputFile == NULL)
     {
-        printf("Could not open the file \n");
-        return -1;
+        printf("Could not open the file! \n");
+        exit(-1);
+    }
+
+    // Ask for origin city and destination city, only in normal path finding mode
+    if (mode == 0)
+    {
+        printf("Enter origin city: ");
+        scanf("%s", source);
+    
+        printf("Enter destination city: ");
+        scanf("%s", destination);
+    
+        printf("\n");
     }
 
 
     // Since we do not know the counts of cities, use malloac
-
 
     // Since Dijkstra's algorithm requires frequent access to the city, better to use dynamic array than the linked list to represent the city map
 
@@ -238,22 +280,29 @@ int main(int argc, char** argv)
         buildGraph(cities, destinationCityIndex, sourceCityIndex, distance); // Bi-directional Graph
     }
 
-    printGraph(cities, cityCount);
-
-    int sourceCityIndex = findCityIndex(&cities, &cityCount, &cityCapacity, source);
+    if (mode == 1)
+    {
+        debugMode(cities, cityCount);
+            // CLEANUPS
+        fclose(inputFile); // Close the file after the end of operation
+        free(cities); // free the allocated memory to avoid memory leaks
+    }
+    else if (mode == 0)
+    {
+        int sourceCityIndex = findCityIndex(&cities, &cityCount, &cityCapacity, source);
         
-    int destinationCityIndex = findCityIndex(&cities, &cityCount, &cityCapacity, destination);
-
-    // Debug
-    printf("Source City Index: %d \n", sourceCityIndex);
-    printf("Destination City Index: %d \n", destinationCityIndex);
-
-    dijkstraAlgorithm(cities, sourceCityIndex, destinationCityIndex, cityCount);
-
-
-    // CLEANUPS
-    fclose(inputFile); // Close the file after the end of operation
-    free(cities); // free the allocated memory to avoid memory leaks
-
-
+        int destinationCityIndex = findCityIndex(&cities, &cityCount, &cityCapacity, destination);
+    
+        // // Debug
+        // printf("Source City Index: %d \n", sourceCityIndex);
+        // printf("Destination City Index: %d \n", destinationCityIndex);
+    
+        dijkstraAlgorithm(cities, sourceCityIndex, destinationCityIndex, cityCount);
+    
+    
+        // CLEANUPS
+        fclose(inputFile); // Close the file after the end of operation
+        free(cities); // free the allocated memory to avoid memory leaks
+        
+    }
 }
