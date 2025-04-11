@@ -79,7 +79,7 @@ void buildGraph(City * cities, int sourceCityIndex, int destinationCityIndex, in
     newNode -> cityIndex = destinationCityIndex;
     newNode -> distance = distance;
     newNode -> nextCity = cities[sourceCityIndex].NeighborHead; // Adding on the first of the list, need not to traverse the list // less time
-    cities[sourceCityIndex].NeighborHead = newNode; // make the neighborhead point to the newl neighbor city
+    cities[sourceCityIndex].NeighborHead = newNode; // make the neighborhead point to the new neighbor city
 
 }
 
@@ -98,12 +98,61 @@ void dijkstraAlgorithm(City *cities, int sourceCityIndex, int destinationCityInd
         pathTracker[i] = 0;
     }
 
+    // set the initial distance for the source city as 0
+    distance[sourceCityIndex] = 0;
+
     // Perform the dijsktra algorithm
-    for (int i = 0; i < cityCount; i++)
+    for (int j = 0; j < cityCount; j++)
     {
-        // set the initial distance for the source city as 0
-        distance[sourceCityIndex] = 0;
-        
+        int minimumDistance = INT32_MAX;
+        int vertex = -1; // Can't be 1 cause what if the first city is the best city
+
+        // Find the city which has not been visited yet and the distance is less than the current minimum distance 
+        for (int k = 0; k < cityCount; k++)
+        {
+            if (!visited[k] && distance[k] < minimumDistance)
+            {
+                minimumDistance = distance[k]; // update the minimum distance 
+                vertex = k;
+            }
+        }
+
+        // if the vertex is still 0; that means none of the cities were visited
+        if (vertex == -1)
+        {
+            break;
+        }
+
+        visited[vertex] = 1; // flag it as visited
+
+        // Now Check for the neighbors // Also known as the relaxation step in Dijkstra's Algorithm
+        NeighborNode* neighbor = cities[vertex].NeighborHead;
+
+        while (neighbor != NULL)
+        {
+            int indexOfNeighbor = neighbor -> cityIndex;
+            int distanceOfNeighbor = neighbor -> distance;
+
+            if (distance[vertex] + distanceOfNeighbor < distance[indexOfNeighbor]) // if the distance of neighbor city + previous weight < previous path // new short path
+            {
+                distance[indexOfNeighbor] = distance[vertex] + distanceOfNeighbor; // update the new shorter path
+                pathTracker[indexOfNeighbor] = vertex; // add the newly discovered shorter path to the path tracker
+            }
+
+            neighbor = neighbor -> nextCity; // Now do the same for next neighbor city
+        }
+    }
+
+    if (distance[destinationCityIndex] == INT32_MAX) // if the destination city's vertex is still infinity, it means no path could reach there
+    {
+        printf("distance: infinity \n");
+        printf("route: \n");
+        printf("none \n");
+    }
+    else
+    {
+        printf("distance: %d \n", distance[destinationCityIndex]); // Destination city's weight is the shortest distance
+        printf("route: \n");
     }
 }
 
@@ -186,26 +235,25 @@ int main(int argc, char** argv)
 
         // add the info to the graph
         buildGraph(cities, sourceCityIndex, destinationCityIndex, distance);
+        buildGraph(cities, destinationCityIndex, sourceCityIndex, distance); // Bi-directional Graph
     }
 
     printGraph(cities, cityCount);
 
+    int sourceCityIndex = findCityIndex(&cities, &cityCount, &cityCapacity, source);
+        
+    int destinationCityIndex = findCityIndex(&cities, &cityCount, &cityCapacity, destination);
 
+    // Debug
+    printf("Source City Index: %d \n", sourceCityIndex);
+    printf("Destination City Index: %d \n", destinationCityIndex);
 
-
-
-
-
-
-
-
+    dijkstraAlgorithm(cities, sourceCityIndex, destinationCityIndex, cityCount);
 
 
     // CLEANUPS
     fclose(inputFile); // Close the file after the end of operation
-    free(cities);
-
-
+    free(cities); // free the allocated memory to avoid memory leaks
 
 
 }
