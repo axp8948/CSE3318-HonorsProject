@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #define MAXINPUT 100
 
 // DATA REPRESENTATION (Using Linked List and array)
@@ -296,8 +297,19 @@ int main(int argc, char** argv)
         debugMode(cities, cityCount);
         
         // CLEANUPS
-        fclose(inputFile); // Close the file after the end of operation
+        for (int i = 0; i < cityCount; i++)
+        {
+            NeighborNode * currentNeighbor = cities[i].NeighborHead;
+
+            while(currentNeighbor != NULL)
+            {
+                NeighborNode * nextNeighbor = currentNeighbor -> nextCity; // save the next link
+                free(currentNeighbor);
+                currentNeighbor = nextNeighbor;
+            }
+        }
         free(cities); // free the allocated memory to avoid memory leaks
+        fclose(inputFile); // Close the file after the end of operation
     }
     else if (mode == 0)
     {
@@ -313,8 +325,24 @@ int main(int argc, char** argv)
     
     
         // CLEANUPS
-        fclose(inputFile); // Close the file after the end of operation
+
+        // Free all the linked list of neighbors before freeing the array of cities // check with valgrind
+        for (int i = 0; i < cityCount; i++)
+        {
+            NeighborNode * currentNeighbor = cities[i].NeighborHead;
+
+            while(currentNeighbor != NULL)
+            {
+                NeighborNode * nextNeighbor = currentNeighbor -> nextCity; // save the next link
+                free(currentNeighbor);
+                currentNeighbor = nextNeighbor;
+            }
+        }
+
         free(cities); // free the allocated memory to avoid memory leaks
+        fclose(inputFile); // Close the file after the end of operation
+       
         
     }
+
 }
